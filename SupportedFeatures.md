@@ -26,18 +26,18 @@ Supported Features
 |maxLength|x||
 |minLength|x||
 |pattern|x||
-|additionalItems|x||
+|additionalItems|o||
 |items|o|Array type or Tuple type|
-|maxItems|p|on using Tuple type definition|
-|minItems|p|on using Tuple type definition|
+|maxItems|o||
+|minItems|o||
 |uniqueItems|x||
 |maxProperties|x||
 |minProperties|x||
 |required|o|non nullable type|
-|additionalProperties|o|if true, add the index signatures|
+|additionalProperties|o|if true, add the index signature|
 |definitions|o||
 |properties|o|add some properties in this type|
-|patternProperties|x||
+|patternProperties|o|merge properties and add index signature|
 |dependencies|x|but also search the sub schema types|
 |enum|o|enum type, supported string and integer values|
 |type|o|The type of that property|
@@ -50,14 +50,14 @@ Supported Features
 
 ## Draft-07
 
-### defference from Draft-04
+### deference from Draft-04
 
 |property|status|on TypeScript|
 |--------|:----:|----|
 |$id|o|replaces `id`|
 |$comment|o|comment string|
-|readOnly|o|readonly property|
-|writeOnly|x|TypeScript is not support the `writeOnly` property|
+|readOnly|x||
+|writeOnly|x||
 |examples|o|comment string|
 |contains|x||
 |propertyNames|x||
@@ -99,6 +99,7 @@ The base JSON Schema version is Draft-07
 |/components/responses/*/content/[Media Type]|
 |/components/responses/*/$ref|
 |/paths/\*/parameters/*/schema|
+|/paths/\*/(get\|put\|post\|delete\|options\|head\|patch\|trace)/parameters/*/content/[Media Type]/schema|
 |/paths/\*/(get\|put\|post\|delete\|options\|head\|patch\|trace)/parameters/*/schema|
 |/paths/\*/(get\|put\|post\|delete\|options\|head\|patch\|trace)/requestBodies/*/content/[Media Type]|
 |/paths/\*/(get\|put\|post\|delete\|options\|head\|patch\|trace)/requestBodies/*/$ref|
@@ -110,4 +111,6 @@ The base JSON Schema version is Draft-07
 - `application/json`
 - `application/x-www-form-urlencoded`
 - `application/*+json`
+- `application/octet-stream`
+- `multipart/form-data`
 - `text/*`

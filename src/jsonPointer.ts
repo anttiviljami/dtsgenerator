@@ -1,5 +1,13 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
-export function get(obj: any, path: string[], isCreateOnNotExists: boolean = false): any {
+export function get(
+    obj: any,
+    path: string[],
+    isCreateOnNotExists = false
+): any {
     if (path.length === 0) {
         return obj;
     }
@@ -52,9 +60,12 @@ export function parse(s: string): string[] {
 function untilde(key: string): string {
     return key.replace(/~(0|1)/g, (match) => {
         switch (match) {
-            case '~0': return '~';
-            case '~1': return '/';
-            default: throw new Error('Unsupported tilded number.');
+            case '~0':
+                return '~';
+            case '~1':
+                return '/';
+            default:
+                throw new Error('Unsupported tilded number.');
         }
     });
 }

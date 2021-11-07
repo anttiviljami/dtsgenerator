@@ -5,6 +5,17 @@ info:
 paths:
   /path:
     post:
+      parameters:
+        - name: name
+          in: query
+          content:
+            application/json:
+              schema:
+                type: string
+        - name: age
+          in: query
+          schema:
+            type: number
       requestBody:
         required: true
         content:
@@ -21,6 +32,32 @@ paths:
           $ref: '#/components/responses/500_Error'
         502:
           $ref: '#/components/responses/502_Error'
+  /second-path:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/uploadFileStreamRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/200_ReturnData'
+  /third-path:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/uploadFileMultipartRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/200_ReturnData'
+  # Vendor media types.
+  /fourth-path:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/vnd.company.v1+json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        200:
+          $ref: '#/components/responses/200_ReturnData'
 components:
   schemas:
     Request:
@@ -80,3 +117,16 @@ components:
         text/plain:
           schema:
             $ref: '#/components/schemas/ErrorText'
+  requestBodies:
+    uploadFileStreamRequest:
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+    uploadFileMultipartRequest:
+      content:
+        multipart/form-data:
+          schema:
+            type: string
+            format: binary

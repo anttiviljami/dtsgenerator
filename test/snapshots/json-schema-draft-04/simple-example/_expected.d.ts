@@ -16,7 +16,10 @@ declare namespace JsonSchemaOrg {
         id: number;
         name: string;
         price: number;
-        tags?: string[];
+        tags?: [
+            string,
+            ...string[]
+        ];
         dimensions?: {
             length: number;
             width: number;
@@ -25,6 +28,6 @@ declare namespace JsonSchemaOrg {
         /**
          * Coordinates of the warehouse with the product
          */
-        warehouseLocation?: Geo;
+        warehouseLocation?: /* A geographical coordinate */ Geo;
     }[];
 }

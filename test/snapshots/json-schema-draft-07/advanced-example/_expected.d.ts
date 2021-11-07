@@ -5,7 +5,10 @@ declare namespace SomeSiteSomewhere {
     export interface EntrySchema {
         storage: EntrySchema.Definitions.DiskDevice | EntrySchema.Definitions.DiskUUID | EntrySchema.Definitions.Nfs | EntrySchema.Definitions.Tmpfs;
         fstype?: "ext3" | "ext4" | "btrfs";
-        options?: string[];
+        options?: [
+            string,
+            ...string[]
+        ];
         readonly?: boolean;
     }
     namespace EntrySchema {
@@ -21,7 +24,7 @@ declare namespace SomeSiteSomewhere {
             export interface Nfs {
                 type: "nfs";
                 remotePath: string; // ^(/[^/]+)+$
-                server: any /* hostname */  | any /* ipv4 */  | any /* ipv6 */ ;
+                server: string /* hostname */ | string /* ipv4 */ | string /* ipv6 */;
             }
             export interface Tmpfs {
                 type: "tmpfs";

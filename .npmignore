@@ -6,19 +6,15 @@ node_modules/
 
 # codes
 test/
-example/*/node_modules/
 
 # misc
 .coveralls.yml
-.editorconfig
-.gitignore
+.eslintcache
 .travis.yml
 .nyc_output/
 build/
 coverage/
 demo/
-greenkeeper.json
 *.tsbuildinfo
 
 npm-debug.log
-

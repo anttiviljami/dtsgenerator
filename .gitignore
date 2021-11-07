@@ -10,5 +10,7 @@ dist/
 *.js
 *.js.map
 *.tsbuildinfo
+.eslintcache
 
-.vscode/
+demo/
+

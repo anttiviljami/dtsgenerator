@@ -6,7 +6,6 @@ TypeScript d.ts file generator from JSON Schema file or OpenAPI(Swagger) spec fi
 [![npm version](https://badge.fury.io/js/dtsgenerator.svg)](https://www.npmjs.com/package/dtsgenerator)
 [![build status](https://travis-ci.org/horiuchi/dtsgenerator.svg?branch=master)](https://travis-ci.org/horiuchi/dtsgenerator)
 [![Coverage Status](https://coveralls.io/repos/github/horiuchi/dtsgenerator/badge.svg?branch=master)](https://coveralls.io/github/horiuchi/dtsgenerator?branch=master)
-[![Greenkeeper badge](https://badges.greenkeeper.io/horiuchi/dtsgenerator.svg)](https://greenkeeper.io/)
 [![npm download count](https://img.shields.io/npm/dt/dtsgenerator.svg)](https://www.npmjs.com/package/dtsgenerator)
 [![dtsgenerator Dev Token](https://badge.devtoken.rocks/dtsgenerator)](https://devtoken.rocks/package/dtsgenerator)
 [![MIT license](https://img.shields.io/npm/l/dtsgenerator.svg)](#)
@@ -15,7 +14,8 @@ TypeScript d.ts file generator from JSON Schema file or OpenAPI(Swagger) spec fi
 
 - [Install](#install)
 - [Usage](#usage)
-- [Advance Usage](#advance-usage)
+- [Migration from v2](#migration-from-v2)
+- [Plug-in](#plug-in)
 - [Development](#development)
 - [ChangeLog](#changelog)
 - [License](#license)
@@ -28,67 +28,91 @@ TypeScript d.ts file generator from JSON Schema file or OpenAPI(Swagger) spec fi
 
 ## Usage
 
-```
+### CLI
+```sh
 $ dtsgen --help
-Usage: script [options] <file ... | file patterns using node-glob>
+Usage: dtsgenerator [options] <file ... | file patterns using node-glob>
 
 Options:
+  -V, --version           output the version number
+  -c, --config <file>     set configuration file path.
+  --url <url>             input json schema from the url. (default: [])
+  --stdin                 read stdin with other files or urls.
+  -o, --out <file>        output filename.
+  -t, --target <version>  Specify ECMAScript target version: 'ES3', 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018',
+                          'ES2019', 'ES2020', or 'ESNEXT' (default).
+  --info                  for developer mode. output loaded config and plugin details only.
+  --output-ast            output TypeScript AST instead of d.ts file.
+  -h, --help              display help for command
 
-  -V, --version                output the version number
-  --url <url>                  input json schema from the url. (default: )
-  --stdin                      read stdin with other files or urls.
-  -o, --out <file>             output d.ts filename.
-  -n, --namespace <namespace>  use root namespace instead of definitions or components.schema from OpenAPI, or -n "" to suppress namespaces.
-  -h, --help                   output usage information
+Examples:
+  $ dtsgen --help
+  $ dtsgen --out types.d.ts schema/**/*.schema.json
+  $ cat schema1.json | dtsgen -c dtsgen.json
+  $ dtsgen -o swaggerSchema.d.ts --url https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/schemas/v2.0/schema.json
+  $ dtsgen -o petstore.d.ts --url https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v2.0/yaml/petstore.yaml
+  $ dtsgen -c dtsgen-test.json --info
 
-  Examples:
-
-    $ dtsgen --help
-    $ dtsgen --out types.d.ts schema/**/*.schema.json
-    $ cat schema1.json | dtsgen
-    $ dtsgen -o swaggerSchema.d.ts --url https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/schemas/v2.0/schema.json
-    $ dtsgen -o petstore.d.ts -n PetStore --url https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v2.0/yaml/petstore.yaml
 ```
 
-## Advance Usage
-
-For customize the output type name.
-
-### Install for library
-
-    npm install -S dtsgenerator
-
-### Usage for library
-
-For example, it want to add the `I` prefix to the interface name.
-This is not usual example...
-
-https://github.com/horiuchi/dtsgenerator/blob/master/example/add-prefix/index.ts
+### NodeJS API
 ```js
-import dtsGenerator, { DefaultTypeNameConvertor, SchemaId } from 'dtsgenerator';
-import * as fs from 'fs';
+const { default: dtsgenerator, parseSchema } = require('dtsgenerator');
 
-const filePath = '../../test/snapshots/json-schema-draft-04/schema/schema.json';
-
-function typeNameConvertor(id: SchemaId): string[] {
-    const names = DefaultTypeNameConvertor(id);
-    if (names.length > 0) {
-        const lastIndex = names.length - 1;
-        names[lastIndex] = 'I' + names[lastIndex];
-    }
-    return names;
-}
-
-async function main(): Promise<void> {
-    const content = JSON.parse( fs.readFileSync(filePath, 'utf-8') );
-    const result = await dtsGenerator({
-        contents: [content],
-        typeNameConvertor,
-    });
-    console.log(result);
-}
-main();
+dtsgenerator({
+    contents: [parseSchema({/* JsonSchema object */})],
+    config: {/* Config object */},
+}).then(content => {
+    /* Do someting with parsed content */
+}).catch(err => {
+    /* Handle errors */
+});
 ```
+
+### Use HTTP/HTTPS Proxy
+
+If you need a proxy to fetch the schema, please set the following environment variables.
+
+```bash
+export http_proxy=http://proxy.example.com:8080/
+export https_proxy=http://proxy.example.com:8080/
+# If there are exceptionally hosts that do not go through a proxy
+export no_proxy=google.com, yahoo.com
+```
+
+## Migration from v2
+
+The dtsgenerator v3 has made the following braking changes from v2.
+
+- Support Plug-in feature. See the Plug-in section for more information.
+- Change the command line options.
+    - Remove the `--namespace` option. Use the `@dtsgenerator/replace-namespace` plug-in instead.
+    - Add the `--config` option. Mainly for setting up the Plug-in.
+    - And add more options.
+- TypeScript AST is now used internally to generate type definitions.
+
+
+## Plug-in
+
+### How to find plug-in
+
+- Search by npm: https://www.npmjs.com/search?q=dtsgenerator%20plugin
+- Find by the @dtsgenerator repositories: https://github.com/dtsgenerator
+    - `@dtsgenerator/replace-namespace` : This plug-in is instead the `--namespace` option on old version.
+    - `@dtsgenerator/decorate-typename` : This plug-in can decorate the output type name.
+    - `@dtsgenerator/single-quote` : This plug-in replace the quote mark to single.
+
+### How to create plug-in
+
+1. Scaffold by the command:
+    - `npm init @dtsgenerator **plugin-name**`
+1. Edit `**plugin-name**/index.ts`
+1. Do test:
+    - `npm test`
+1. Build it:
+    - `npm run build`
+1. Publish to npm:
+    - `npm publish`
 
 ## Development
 
@@ -117,86 +141,129 @@ Output debug message by [debug](https://www.npmjs.com/package/debug) library.
 
 ## ChangeLog
 
-### [v2.5.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.5.0) (2020-02-28)
+### [v3.12.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.12.1) (2021-05-19)
+
+- fixed:
+  - Fix referenced parameters not resolved error by #471. Thank you @jschirrmacher :+1:
+
+### [v3.12.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.12.0) (2021-05-13)
 
 - features:
-  - Add to support the text media type on Open API Schema by #396. Thank you @silesky :+1:
+  - Support input type `file` by #496. Thank you @Christian24 :+1:
+  - Improve the conversion results of parameters property on OpenAPI by #501.
 
-### [v2.4.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.4.1) (2020-02-05)
-
-- fixed
-  - Fix: the bug of #386. thank you for reporting issue @Oloompa :+1:
-
-### [v2.4.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.4.0) (2020-02-04)
-
-- fixed
-  - Fix: typescript import statement #381. thank you @lupus92 :+1:
-  - Fix: use `export` when given empty namespace #386. Thank you @zregvart :+1:
-
-### [v2.3.2](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.3.2) (2019-11-21)
-
-- fixed
-  - Fix: the bug of the specific identifier #375. Thank you for reporting the bug @adriengibrat :+1:
-
-### [v2.3.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.3.1) (2019-09-02)
+### [v3.11.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.11.0) (2021-05-11)
 
 - features:
-  - Support the dynamic JSON media type #363. Thank you @buelsenfrucht :+1:
-  - Add to support the `number` type enum values #365. Thank you @vincentlin02 :+1:
+  - Support vendor media types (allow periods in application/*+json) by #497. Thank you @glen-84 :+1:
+- fixed:
+  - Remove to support the `readOnly` property, because of wrong interpretation by #498. Thank you @hallsbyra :+1:
 
-### [v2.3.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.3.0) (2019-08-23)
-
-- features:
-  - Improve the tuple type output by TypeScript v3 syntax, and Support `maxItems` property #339. Thank you @keean :+1:
-
-### [v2.2.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.2.0) (2019-08-06)
-
-- fixed
-  - Fix: "_" character at the end of generated type #358. Thank you @KostblLb :+1:
-
-### [v2.1.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.1.0) (2019-07-18)
+### [v3.10.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.10.0) (2021-04-26)
 
 - features:
-  - Add to support objected example #356. Thank you for reporting the issue #348 by @fantapop :+1:
-  - Add to support the `application/x-www-form-urlencoded` branch on OpenAPI. #357
+  - Support freeform objects w/ index signature instead of `unknown` keyword by #488. Thank you @medfreeman :+1:
+  - Support the `content` property in `Parameters` by #472. Thank you for report @npdev453 :+1:
 
-### [v2.0.8](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.8) (2019-06-25)
+### [v3.9.2](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.9.2) (2021-04-19)
 
-- fixed
-  - Fix: OneOf + type "object" produces empty interface #351. Thank you @polomani :+1:
+- fixed:
+  - Fix nested `oneOf` & `anyOf` keywords by #486. Thank you @medfreeman :+1:
 
-### [v2.0.7](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.7) (2019-05-07)
+### [v3.9.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.9.1) (2021-04-16)
 
-- fixed
-  - Fix: typename when the path is nested #334. Thank you @steelydylan :+1:
-  - Fix: Support ref objects for OAS3 requestBodies + responses #343. Thank you @anttiviljami :+1:
+- fixed:
+  - Update `generate` function to use recommended immutable approach for typescript transforms by #483. Thank you again @medfreeman :+1:
 
-### [v2.0.6](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.6) (2019-02-14)
+### [v3.9.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.9.0) (2021-04-13)
 
-- fixed
-  - Fix "Error: The $ref target is not exists" on valid OpenAPI 3 spec #322. Thank you @f1cognite :+1:
+- features:
+  - support for additionalItems property by #481. Thank you again @medfreeman :+1:
 
-### [v2.0.5](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.5) (2019-01-28)
+### [v3.8.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.8.0) (2021-04-08)
 
-- features
-  - Add to support the `nullable` property on OpenAPI by #319. Thank you @sakari :+1:
-    https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+- features:
+  - full support for minItems & maxItems properties by #476. Thank you @medfreeman :+1:
 
-### [v2.0.4](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.4) (2019-01-07)
+### [v3.7.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.7.1) (2021-02-18)
 
-- fixed
-  - Fix missing schema due to yaml references #318. Thank you @sakari :+1:
+- fixed:
+  - add truthy check for value in `mergeSchema` by #474. Thank you @ricokahler :+1:
 
-### [v2.0.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.1) (2018-12-21)
+### [v3.7.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.7.0) (2021-01-05)
 
-- fixed
-  - A property name cannot contain a "/" #315. Thank you @Reggino :+1:
-  - update `.npmignore`
+- features:
+  - Add the `void` type support by #468. Thank you for your propose @henhal by #445 :+1:
 
-### [v2.0.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v2.0.0) (2018-10-22)
+### [v3.6.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.6.0) (2020-12-25)
 
-- features
-  - Add to support emit the Request/Response object schema of OpenAPI by #304.
+- features:
+  - Improve the type result of oneOf/anyOf property by #467. Thank you for your report @crizo23 by #452 :+1:
+  - Improve the internal eslint configuration by #466. Thank you @Goldziher :+1:
+
+### [v3.5.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.5.0) (2020-12-21)
+
+- features:
+  - Add to export `ts` object for to use the same version TypeScript in all plugins by #465.
+
+### [v3.4.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.4.1) (2020-12-16)
+
+- fixed:
+  - Fix using package without esModuleInterop setting on tsconfig by #460. Thank you @wszydlak :+1:
+  - Update TypeScript v4 by #462. Thank you @wszydlak :+1:
+  - Add to support the null type enum value by #464. Thank you for your report @Goldziher :+1:
+
+### [v3.4.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.4.0) (2020-12-15)
+
+- features:
+  - Add support for multipart media type by #455. Thank you @wszydlak :+1:
+  - Add support for passing config object with NodeJS API usage by #456. Thank you @wszydlak :+1:
+
+### [v3.3.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.3.1) (2020-10-05)
+
+- fixed:
+  - Elements get type "any" instead of the correct one by #448. Thank you for your report @nachtigall-83 :+1:
+
+### [v3.3.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.3.0) (2020-07-29)
+
+- features:
+  - Support the `patternProperties` by #436. Thank you @nfroidure :+1:
+- fixed:
+  - Definition generated improperly when multiple instances of a resource are inherited by #279. Thank you @btg5679 :+1:
+  - Apply the `prettier` config on `.eslintrc.json`.
+
+### [v3.2.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.2.0) (2020-07-20)
+
+- features:
+  - Add support for application/octet-stream media type by #431. Thank you @MisterChateau :+1:
+
+### [v3.1.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.1.1) (2020-06-23)
+
+- fixed:
+  - Cannot load config file of relative path by #428. Thank you @DamianOsipiuk :+1:
+
+### [v3.1.0](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.1.0) (2020-06-22)
+
+- features:
+  - Add support for nullable anyOf in OpenApi v3 by #426. Thank you @joost-kersjes-webpower :+1:
+
+### [v3.0.3](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.0.3) (2020-06-15)
+
+- fixed:
+  - Fix the command option example by #422. Thank you @maapteh :+1:
+  - Omit load config error on not config option by #425. Thank you @Christian24 :+1:
+
+### [v3.0.2](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.0.2) (2020-06-11)
+
+- fixed:
+  - Remove old example by #421. Thank you @maapteh :+1:
+
+### [v3.0.1](https://github.com/horiuchi/dtsgenerator/releases/tag/v3.0.1) (2020-06-09)
+
+- features:
+  - Support the plug-in for pre-process and post-process.
+  - Change command line options and Support config file.
+  - Use the TypeScript AST for intermediate format.
 
 ### older versions history
 
@@ -206,4 +273,4 @@ Output debug message by [debug](https://www.npmjs.com/package/debug) library.
 
 `dtsgenerator` is licensed under the MIT license.
 
-Copyright &copy; 2016-2019, [Hiroki Horiuchi](mailto:horiuchi.g@gmail.com)
+Copyright &copy; 2016-2020, [Hiroki Horiuchi](mailto:horiuchi.g@gmail.com)
