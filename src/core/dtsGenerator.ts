@@ -30,7 +30,6 @@ export interface ExportedType {
 }
 
 export default class DtsGenerator {
-    public exportedTypes: ExportedType[] = [];
     private resolver = new ReferenceResolver();
     private currentSchema!: NormalizedSchema;
     private contents: Schema[];
@@ -81,6 +80,8 @@ export default class DtsGenerator {
         result.dispose();
         return transformedContent;
     }
+
+    private exportedTypes: ExportedType[] = [];
 
     private async getPlugins(): Promise<{
         pre: PluginConfig[];
@@ -196,7 +197,7 @@ export default class DtsGenerator {
 
     private addExport(schema: Schema) {
         const names = schema.id.toNames();
-        const name = names[names.length - 1] as string
+        const name = names[names.length - 1] as string;
         const schemaRef = schema.id.getJsonPointerHash();
         const path = names.join('.');
         this.exportedTypes.push({ name, path, schemaRef });
