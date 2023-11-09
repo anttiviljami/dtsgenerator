@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import { ScriptTarget } from 'typescript';
 
 // via. https://github.com/microsoft/TypeScript/blob/v3.7.5/src/services/codefixes/importFixes.ts#L689
 export function checkInvalidCharacter(
     text: string,
-    target: ScriptTarget
+    target: ScriptTarget,
 ): boolean {
     const firstCharCode = text.charCodeAt(0);
     if (!isIdentifierStart(firstCharCode, target)) {
@@ -752,7 +754,7 @@ const unicodeESNextIdentifierPart = [
 
 function lookupInUnicodeMap(code: number, map: readonly number[]): boolean {
     // Bail out quickly if it couldn't possibly be in the map.
-    if (code < map[0]) {
+    if (code < map[0]!) {
         return false;
     }
 
@@ -765,11 +767,11 @@ function lookupInUnicodeMap(code: number, map: readonly number[]): boolean {
         mid = lo + (hi - lo) / 2;
         // mid has to be even to catch a range's beginning
         mid -= mid % 2;
-        if (map[mid] <= code && code <= map[mid + 1]) {
+        if (map[mid]! <= code && code <= map[mid + 1]!) {
             return true;
         }
 
-        if (code < map[mid]) {
+        if (code < map[mid]!) {
             hi = mid;
         } else {
             lo = mid + 2;

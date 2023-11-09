@@ -5,9 +5,11 @@ declare namespace Components {
     }
     namespace Responses {
         export type $200ReturnData = Schemas.Data[];
+        export type $200ReturnString = string;
         export type $400BadRequest = Schemas.Error;
         export type $403Forbidden = Schemas.Error;
         export type $500Error = Schemas.Error;
+        export type $501Error = Schemas.ErrorImage /* binary */;
         export type $502Error = Schemas.ErrorText;
     }
     namespace Schemas {
@@ -19,6 +21,7 @@ declare namespace Components {
             code: number;
             description: string;
         }
+        export type ErrorImage = string; // binary
         export type ErrorText = string;
         export interface Request {
             name?: string;
@@ -27,6 +30,13 @@ declare namespace Components {
     }
 }
 declare namespace Paths {
+    namespace FifthPath {
+        namespace Get {
+            namespace Responses {
+                export type $200 = Components.Responses.$200ReturnString;
+            }
+        }
+    }
     namespace FourthPath {
         namespace Post {
             export type RequestBody = Components.Schemas.Request;
@@ -50,6 +60,7 @@ declare namespace Paths {
                 export type $400 = Components.Responses.$400BadRequest;
                 export type $403 = Components.Responses.$403Forbidden;
                 export type $500 = Components.Responses.$500Error;
+                export type $501 = Components.Responses.$501Error;
                 export type $502 = Components.Responses.$502Error;
             }
         }

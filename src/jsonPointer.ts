@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -6,15 +6,15 @@
 export function get(
     obj: any,
     path: string[],
-    isCreateOnNotExists = false
+    isCreateOnNotExists = false,
 ): any {
     if (path.length === 0) {
         return obj;
     }
     let o = obj;
-    const lastKey = path[path.length - 1];
+    const lastKey = path[path.length - 1]!;
     for (let i = 0; i < path.length - 1; i++) {
-        const key = path[i];
+        const key = path[i]!;
         let next = o[key];
         if (next == null) {
             if (isCreateOnNotExists) {
@@ -34,9 +34,9 @@ export function set(obj: any, path: string[], value: any): void {
         return;
     }
     let o = obj;
-    const lastKey = path[path.length - 1];
+    const lastKey = path[path.length - 1]!;
     for (let i = 0; i < path.length - 1; i++) {
-        const key = path[i];
+        const key = path[i]!;
         let next = o[key];
         if (next == null) {
             next = {};
@@ -48,7 +48,7 @@ export function set(obj: any, path: string[], value: any): void {
 }
 
 export function parse(s: string): string[] {
-    if (/^#/.test(s)) {
+    if (s.startsWith('#')) {
         s = s.substring(1);
     }
     const path = s.split('/');

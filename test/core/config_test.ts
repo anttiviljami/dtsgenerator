@@ -1,12 +1,13 @@
 import assert from 'assert';
-import dtsgenerator from '../src/core';
+import { ScriptTarget } from 'typescript';
+import dtsgenerator from '../../src/core';
 import config, {
     clearToDefault,
     setConfig,
     showConfig,
-} from '../src/core/config';
-import { JsonSchemaDraft04 } from '../src/core/jsonSchemaDraft04';
-import { ts, parseSchema } from '../src/core/type';
+} from '../../src/core/config';
+import { JsonSchemaDraft04 } from '../../src/core/jsonSchemaDraft04';
+import { ts, parseSchema } from '../../src/core/type';
 
 describe('show config test', () => {
     let content: string;
@@ -41,7 +42,7 @@ Config:
 
 Plugins: count=0
 
-`
+`,
         );
     });
     it('full config test', async () => {
@@ -75,7 +76,7 @@ Plugins: count=0
         await showConfig('full_config', config);
 
         function getVersion(key: string): string {
-            const pkg = require('../package.json');
+            const pkg = require('../../package.json');
             const version: string = pkg.devDependencies[key];
             if (/^[^\d]/.test(version)) {
                 return version.substr(1);
@@ -99,14 +100,47 @@ Config:
 
 Plugins: count=2
   @dtsgenerator/single-quote@${getVersion(
-      '@dtsgenerator/single-quote'
+      '@dtsgenerator/single-quote',
   )}: change all quotation mark to single
   @dtsgenerator/replace-namespace@${getVersion(
-      '@dtsgenerator/replace-namespace'
+      '@dtsgenerator/replace-namespace',
   )}: replace the namespace names
 
 `;
         assert.strictEqual(content, expected, content);
+    });
+    it('check target conversion test', async () => {
+        for (const [target, name] of [
+            [ScriptTarget.ES3, 'ES3'],
+            [ScriptTarget.ES5, 'ES5'],
+            [ScriptTarget.ES2015, 'ES2015'],
+            [ScriptTarget.ES2016, 'ES2016'],
+            [ScriptTarget.ES2017, 'ES2017'],
+            [ScriptTarget.ES2018, 'ES2018'],
+            [ScriptTarget.ES2019, 'ES2019'],
+            [ScriptTarget.ES2020, 'ES2020'],
+            [ScriptTarget.ESNext, 'ESNext'],
+            [ScriptTarget.Latest, 'ESNext'],
+        ] as const) {
+            content = '';
+
+            setConfig({ target });
+            await showConfig('no_config', config);
+            assert.strictEqual(
+                content,
+                `Version: no_config
+ConfigFile: "not set"
+
+Config:
+  input:
+  target: ${name}
+  plugins:
+
+Plugins: count=0
+
+`,
+            );
+        }
     });
 });
 
@@ -203,6 +237,56 @@ describe('config test', () => {
             ('NW' | 'NE' | 'SW' | 'SE')?,
             ...any[]
         ];
+    }
+}
+`;
+        assert.strictEqual(result, expected, result);
+    });
+    it('apply replace-namespace plugin test', async () => {
+        const schema: JsonSchemaDraft04.Schema = {
+            id: '/test/replace-namespace',
+            type: 'object',
+            properties: {
+                id: {
+                    type: 'integer',
+                },
+                array: {
+                    type: 'array',
+                    items: [
+                        { type: 'string' },
+                        { type: 'integer' },
+                        { type: 'boolean' },
+                        {
+                            type: 'string',
+                            enum: ['NW', 'NE', 'SW', 'SE'],
+                        },
+                    ],
+                },
+            },
+        };
+        const result = await dtsgenerator({
+            contents: [parseSchema(schema)],
+            config: {
+                plugins: {
+                    '@dtsgenerator/replace-namespace': {
+                        map: [{ from: ['Test'], to: ['Replaced', 'Example'] }],
+                    },
+                },
+            },
+        });
+
+        const expected = `declare namespace Replaced {
+    namespace Example {
+        export interface ReplaceNamespace {
+            id?: number;
+            array?: [
+                string?,
+                number?,
+                boolean?,
+                ("NW" | "NE" | "SW" | "SE")?,
+                ...any[]
+            ];
+        }
     }
 }
 `;

@@ -3,11 +3,7 @@ import { Plugin, loadPlugin } from './type';
 
 export interface Config {
     configFile?: string;
-    input: {
-        files: string[];
-        urls: string[];
-        stdin: boolean;
-    };
+    input: InputConfig;
     outputFile?: string;
     target: ScriptTarget;
     outputAST: boolean;
@@ -17,20 +13,32 @@ export interface Config {
     };
 }
 
+interface InputConfig {
+    files: string[];
+    urls: string[];
+    stdin: boolean;
+}
+
+export type PartialConfig = Omit<Partial<Config>, 'input'> & {
+    input?: Partial<InputConfig>;
+};
+
 const defaultConfig: Config = {
+    configFile: undefined,
     input: {
         files: [],
         urls: [],
         stdin: false,
     },
-    outputAST: false,
+    outputFile: undefined,
     target: ScriptTarget.Latest,
+    outputAST: false,
     plugins: {},
 };
 
 let config: Config = Object.assign({}, defaultConfig);
 
-export function setConfig(input: Partial<Config>): void {
+export function setConfig(input: PartialConfig): void {
     config = Object.assign(config, input);
 }
 
@@ -77,7 +85,7 @@ export async function showConfig(version: string, c: Config): Promise<void> {
     console.log('Plugins: count=' + plugins.length.toString());
     for (const p of plugins) {
         console.log(
-            `  ${p.meta.name}@${p.meta.version}: ${p.meta.description ?? ''}`
+            `  ${p.meta.name}@${p.meta.version}: ${p.meta.description ?? ''}`,
         );
     }
     console.log();

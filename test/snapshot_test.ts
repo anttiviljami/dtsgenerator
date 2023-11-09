@@ -2,13 +2,14 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import dtsgenerator from '../src/core';
-import { clearToDefault, setConfig } from '../src/core/config';
+import { clearToDefault, Config, setConfig } from '../src/core/config';
 import { parseFileContent, parseSchema } from '../src/core/type';
 
 const fixturesDir = path.join(__dirname, 'snapshots');
 const expectedFileName = '_expected.d.ts';
 const configFileName = '_config.json';
 const reservedFiles = [expectedFileName, configFileName];
+const skipTestFileName = '_skip_test';
 
 describe('Snapshot testing', () => {
     afterEach(() => {
@@ -20,17 +21,23 @@ describe('Snapshot testing', () => {
             const normalizedTestName = caseName.replace(/-/g, ' ');
             it(`Test ${typeName} ${normalizedTestName}`, async function () {
                 const fixtureDir = path.join(fixturesDir, typeName, caseName);
-                const filePaths = fs.readdirSync(fixtureDir);
+                if (fs.existsSync(path.join(fixtureDir, skipTestFileName))) {
+                    this.skip();
+                    return;
+                }
+
                 const expectedFilePath = path.join(
                     fixtureDir,
-                    expectedFileName
+                    expectedFileName,
                 );
                 const configFilePath = path.join(fixtureDir, configFileName);
-                const config = fs.existsSync(configFilePath)
+                const config: Partial<Config> = fs.existsSync(configFilePath)
                     ? require(configFilePath)
                     : {};
 
                 setConfig(config);
+
+                const filePaths = fs.readdirSync(fixtureDir);
                 const contents = filePaths
                     .filter((f) => !reservedFiles.includes(f))
                     .map((f) => path.join(fixtureDir, f))

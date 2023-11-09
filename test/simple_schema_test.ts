@@ -86,7 +86,7 @@ describe('simple schema test', () => {
         const expected = `declare namespace Test {
     export interface IncArray {
         id?: number;
-        array?: (string | boolean | null | number)[];
+        array?: (string | number | boolean | null)[];
     }
 }
 `;
@@ -195,7 +195,7 @@ describe('simple schema test', () => {
             type: 'object',
             properties: {
                 nullEnum: {
-                    type: 'null',
+                    type: ['null'],
                     enum: [null],
                 },
                 nonTypeNum: {
@@ -218,9 +218,45 @@ describe('simple schema test', () => {
 `;
         assert.strictEqual(result, expected, result);
     });
-    it('string and integer const schema', async () => {
+    it('number type enum schema', async () => {
+        const schema: JsonSchemaDraft04.Schema = {
+            id: '/test/number_type',
+            type: 'object',
+            properties: {
+                numbers: {
+                    enum: [
+                        '001',
+                        '002',
+                        '003',
+                        '004',
+                        '005',
+                        '006',
+                        '007',
+                        '008',
+                        '009',
+                        '010',
+                    ],
+                    example: '001',
+                },
+            },
+        };
+        const result = await dtsgenerator({ contents: [parseSchema(schema)] });
+
+        const expected = `declare namespace Test {
+    export interface NumberType {
+        /**
+         * example:
+         * 001
+         */
+        numbers?: "001" | "002" | "003" | "004" | "005" | "006" | "007" | "008" | "009" | "010";
+    }
+}
+`;
+        assert.strictEqual(result, expected, result);
+    });
+    it('include const schema', async () => {
         const schema: JsonSchemaDraft07.Schema = {
-            $id: '/test/const_string_vs_integer',
+            $id: '/test/include_const',
             $schema: 'http://json-schema.org/draft-07/schema#',
             type: 'object',
             properties: {
@@ -232,14 +268,23 @@ describe('simple schema test', () => {
                     type: 'string',
                     const: 'NE',
                 },
+                isActive: {
+                    type: 'boolean',
+                    const: true,
+                },
+                debug: {
+                    const: null,
+                },
             },
         };
         const result = await dtsgenerator({ contents: [parseSchema(schema)] });
 
         const expected = `declare namespace Test {
-    export interface ConstStringVsInteger {
+    export interface IncludeConst {
         port?: 1;
         direction?: "NE";
+        isActive?: true;
+        debug?: null;
     }
 }
 `;
@@ -331,11 +376,32 @@ describe('simple schema test', () => {
 `;
         assert.strictEqual(result, expected, result);
     });
+    it('root no type schema', async () => {
+        const schema: JsonSchemaDraft04.Schema = {
+            id: 'test/root/no_type',
+            description: 'This is any type schema',
+            additionalProperties: true,
+        };
+        const result = await dtsgenerator({ contents: [parseSchema(schema)] });
+
+        const expected = `declare namespace Test {
+    namespace Root {
+        /**
+         * This is any type schema
+         */
+        export interface NoType {
+            [name: string]: any;
+        }
+    }
+}
+`;
+        assert.strictEqual(result, expected, result);
+    });
     it('root any schema', async () => {
         const schema: JsonSchemaDraft04.Schema = {
             id: 'test/root/root_any',
             description: 'This is any type schema',
-            additionalProperties: true,
+            type: 'any',
         };
         const result = await dtsgenerator({ contents: [parseSchema(schema)] });
 
@@ -423,6 +489,37 @@ describe('simple schema test', () => {
          */
         export interface Root {
             name?: string | null;
+        }
+    }
+}
+`;
+        assert.strictEqual(result, expected, result);
+    });
+    it('include nullable schema', async () => {
+        const schema: JsonSchemaDraft04.Schema = {
+            id: 'test/nullable/root',
+            properties: {
+                id: {
+                    type: 'integer',
+                    nullable: true,
+                },
+                n: {
+                    nullable: true,
+                },
+                sb: {
+                    type: ['string', 'boolean'],
+                    nullable: true,
+                },
+            },
+        };
+
+        const result = await dtsgenerator({ contents: [parseSchema(schema)] });
+        const expected = `declare namespace Test {
+    namespace Nullable {
+        export interface Root {
+            id?: number | null;
+            n?: null;
+            sb?: string | boolean | null;
         }
     }
 }
@@ -532,6 +629,31 @@ describe('simple schema test', () => {
     namespace Include {
         export interface Slash {
             "a/b"?: string;
+        }
+    }
+}
+`;
+        assert.strictEqual(result, expected, result);
+    });
+    it('include numeric properties schema', async () => {
+        const schema: JsonSchemaDraft04.Schema = {
+            id: '/test/include/123',
+            type: 'object',
+            properties: {
+                1: { type: 'number' },
+                2: { type: 'string' },
+                3: { type: 'boolean' },
+            },
+            required: ['1', '3'],
+        };
+        const result = await dtsgenerator({ contents: [parseSchema(schema)] });
+
+        const expected = `declare namespace Test {
+    namespace Include {
+        export interface $123 {
+            "1": number;
+            "2"?: string;
+            "3": boolean;
         }
     }
 }
@@ -813,7 +935,7 @@ describe('simple schema test', () => {
 
         const result = await dtsgenerator({
             contents: [baseSchema, numberSchema, stringSchema].map((s) =>
-                parseSchema(s)
+                parseSchema(s),
             ),
         });
 

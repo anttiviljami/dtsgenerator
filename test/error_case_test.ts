@@ -4,6 +4,10 @@ import dtsgenerator from '../src/core';
 import { JsonSchemaDraft04 } from '../src/core/jsonSchemaDraft04';
 import { parseSchema } from '../src/core/type';
 
+function isErrorType(e: unknown): e is Error {
+    return typeof e === 'object' && e != null && 'message' in e;
+}
+
 describe('error schema test', () => {
     it('no id schema', async () => {
         const schema: JsonSchemaDraft04.Schema = {
@@ -13,26 +17,28 @@ describe('error schema test', () => {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(
                 e.message,
-                'There is no schema in the input contents.'
+                'There is no schema in the input contents.',
             );
         }
     });
     it('unknown type schema', async () => {
-        const schema: any = {
+        const schema: JsonSchemaDraft04.Schema = {
             id: '/test/unknown_type',
             type: 'hoge',
-        };
+        } as any;
         try {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(e.message, 'unknown type: hoge');
         }
     });
     it('unknown type property', async () => {
-        const schema: any = {
+        const schema: JsonSchemaDraft04.Schema = {
             id: '/test/unknown_property',
             type: 'object',
             properties: {
@@ -40,11 +46,12 @@ describe('error schema test', () => {
                     type: 'fuga',
                 },
             },
-        };
+        } as any;
         try {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(e.message, 'unknown type: fuga');
         }
     });
@@ -63,9 +70,10 @@ describe('error schema test', () => {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(
                 e.message,
-                'The $ref target is not found: /notFound/id#'
+                'The $ref target is not found: /notFound/id#',
             );
         }
     });
@@ -83,22 +91,24 @@ describe('error schema test', () => {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(
                 e.message,
-                'The $ref target is not found: /test/target_not_found#hogefuga'
+                'The $ref target is not found: /test/target_not_found#hogefuga',
             );
         }
     });
     it('invalid format schema', async () => {
-        const schema =
+        const schema: JsonSchemaDraft04.Schema =
             'This string is not schema data and invalid JSON format {.' as any;
         try {
             await dtsgenerator({ contents: [parseSchema(schema)] });
             assert.fail();
         } catch (e) {
+            assert.ok(isErrorType(e));
             assert.strictEqual(
                 e.message,
-                'expect parameter of type object, received string'
+                'expect parameter of type object, received string',
             );
         }
     });

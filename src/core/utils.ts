@@ -11,7 +11,7 @@ const debug = Debug('dtsgen');
 
 export function toTSType(
     type: string,
-    debugSource?: JsonSchemaObject
+    debugSource?: JsonSchemaObject,
 ): ts.KeywordTypeSyntaxKind | ts.SyntaxKind.NullKeyword | undefined {
     switch (type) {
         case 'any':
@@ -39,8 +39,8 @@ export function toTSType(
                     `toTSType: unknown type: ${JSON.stringify(
                         debugSource,
                         null,
-                        2
-                    )}`
+                        2,
+                    )}`,
                 );
             }
             throw new Error('unknown type: ' + type);
@@ -52,18 +52,39 @@ export function reduceTypes(types: SimpleTypes[]): SimpleTypes[] {
         return types;
     }
     const set = new Set<SimpleTypes>(types);
-    if (set.delete('integer')) {
-        set.add('number');
-    }
     return Array.from(set.values());
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function mergeSchema(a: any, b: any): any {
-    if ('$ref' in a || '$ref' in b) {
-        return { $ref: b['$ref'] || a['$ref'] };
+export function checkValidMIMEType(mime: string): boolean {
+    const type = mime.toLowerCase().split(';')[0]?.trim();
+    if (type == null) {
+        return false;
     }
-    Object.keys(b).forEach((key: string) => {
+    if (
+        [
+            'application/octet-stream',
+            'application/x-www-form-urlencoded',
+            'multipart/form-data',
+
+            'application/jwt',
+            'application/vnd.apple.pkpass',
+        ].includes(type)
+    ) {
+        return true;
+    }
+    if (type.startsWith('text/') || type.startsWith('image/')) {
+        return true;
+    }
+    return /^application\/(?:[a-z0-9-_.]+\+)?json5?$/.test(type);
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function mergeSchema(a: any, b: any): boolean {
+    if ('$ref' in a || '$ref' in b) {
+        a.$ref = b.$ref || a.$ref;
+        return false;
+    }
+    Object.keys(b as object).forEach((key: string) => {
         const value = b[key];
         if (a[key] != null && typeof value !== typeof a[key]) {
             debug(`mergeSchema warning: type is mismatched, key=${key}`);
@@ -72,11 +93,11 @@ export function mergeSchema(a: any, b: any): any {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             a[key] = (a[key] ?? []).concat(value);
         } else if (value != null && typeof value === 'object') {
-            a[key] = mergeSchema(a[key] || {}, value);
+            a[key] ??= {};
+            mergeSchema(a[key], value);
         } else {
             a[key] = value;
         }
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return a;
+    return true;
 }
