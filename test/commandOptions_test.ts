@@ -15,7 +15,7 @@ describe('output command help test', () => {
             .outputHelp();
         assert.strictEqual(
             output,
-            `Usage: dtsgenerator [options] <file ... | file patterns using node-glob>
+            `Usage: @anttiviljami/dtsgenerator [options] <file ... | file patterns using node-glob>
 
 Options:
   -V, --version           output the version number
