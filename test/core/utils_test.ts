@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { checkValidMIMEType } from '../../src/core/utils';
+import { checkValidMIMEType, mergeSchema } from '../../src/core/utils';
 
 describe('checkValidMIMEType test', () => {
     it('MIME type is plain text', () => {
@@ -85,5 +85,31 @@ describe('checkValidMIMEType test', () => {
         const mime = 'application/vnd.apple.pkpass';
         const actual = checkValidMIMEType(mime);
         assert.equal(actual, true, mime);
+    });
+});
+
+describe('mergeSchema test', () => {
+    it('mergeSchema object and array values', () => {
+        const a = { a: { b: 'nop' } };
+        const b = { a: [] };
+        const actual = mergeSchema(a, b);
+        assert.strictEqual(actual, true);
+        assert.deepEqual(a, { a: [] });
+    });
+
+    it('mergeSchema array values', () => {
+        const a = { a: ['1'] };
+        const b = { a: ['2'] };
+        const actual = mergeSchema(a, b);
+        assert.strictEqual(actual, true);
+        assert.deepEqual(a, { a: ['1', '2'] });
+    });
+
+    it('mergeSchema object values', () => {
+        const a = { a: { a: '1' } };
+        const b = { a: { b: '2' } };
+        const actual = mergeSchema(a, b);
+        assert.strictEqual(actual, true);
+        assert.deepEqual(a, { a: { a: '1', b: '2' } });
     });
 });
