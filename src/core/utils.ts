@@ -86,13 +86,22 @@ export function mergeSchema(a: any, b: any): boolean {
     }
     Object.keys(b as object).forEach((key: string) => {
         const value = b[key];
-        if (a[key] != null && typeof value !== typeof a[key]) {
+        if (
+            a[key] != null &&
+            (typeof value !== typeof (a[key] ?? {}) ||
+                Array.isArray(value) !== Array.isArray(a[key] ?? []))
+        ) {
             debug(`mergeSchema warning: type is mismatched, key=${key}`);
         }
-        if (Array.isArray(value)) {
+        if (Array.isArray(value) && Array.isArray(a[key] ?? [])) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             a[key] = (a[key] ?? []).concat(value);
-        } else if (value != null && typeof value === 'object') {
+        } else if (
+            value != null &&
+            typeof value === 'object' &&
+            !Array.isArray(value) &&
+            !Array.isArray(a[key] ?? {})
+        ) {
             a[key] ??= {};
             mergeSchema(a[key], value);
         } else {
