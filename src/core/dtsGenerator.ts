@@ -701,6 +701,8 @@ export default class DtsGenerator {
             const elements = this.generateProperties(schema);
             if (elements.length > 0) {
                 return ast.buildTypeLiteralNode(elements);
+            } else if (schema.content.additionalProperties === false) {
+                return ast.buildEmptyObjectTypeLiteralNode();
             } else {
                 return ast.buildFreeFormObjectTypeLiteralNode();
             }

@@ -15,7 +15,7 @@ describe('root utils test', () => {
             const stream = fs.createReadStream(__dirname + '/../package.json');
             const data = await readStream(stream);
             const json = JSON.parse(data);
-            assert.equal(json.name, 'dtsgenerator');
+            assert.equal(json.name, '@anttiviljami/dtsgenerator');
         });
     });
 
