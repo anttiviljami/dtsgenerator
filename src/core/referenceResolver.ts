@@ -51,8 +51,14 @@ export default class ReferenceResolver {
                 if (refSchema == null && id.isFetchable()) {
                     try {
                         debug(`fetch remote schema: id=[${fileId}].`);
-                        const s = await readSchemaFromUrl(fileId);
+                        // Remove pointer (#/foo/bar) for fetching, but keep original URL structure
+                        const fetchUrl = fileId.split('#')[0] as string;
+                        const s = await readSchemaFromUrl(fetchUrl);
+                        // Set the schema ID to the base URL without pointer for proper registration
+                        s.id = new SchemaId(fetchUrl);
                         this.registerSchema(s);
+                        // Also register it with the fileId (with #) for pointer resolution
+                        this.schemaCache.set(fileId, s);
                     } catch (e) {
                         error.push(
                             `Fail to fetch the $ref target: ${id.getAbsoluteId()}, ${String(
