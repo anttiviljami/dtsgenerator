@@ -149,4 +149,33 @@ describe('schema id parser test', () => {
             '#',
         );
     });
+
+    it('resolves simple references like url.resolve', () => {
+        assert.strictEqual(
+            new SchemaId('#/b', ['/a/x#c']).getAbsoluteId(),
+            '/a/x#/b',
+        );
+        assert.strictEqual(
+            new SchemaId('/properties/x', [
+                '#/components/schemas/A',
+            ]).getAbsoluteId(),
+            '/properties/x#',
+        );
+    });
+
+    it('falls back to url.resolve for references it would rewrite', () => {
+        assert.strictEqual(
+            new SchemaId('#/paths/~1a~1{id}', []).getAbsoluteId(),
+            '#/paths/~1a~1%7Bid%7D',
+        );
+        assert.strictEqual(
+            new SchemaId('#/x', ['/a/../b']).getAbsoluteId(),
+            '/b#/x',
+        );
+        assert.strictEqual(
+            new SchemaId('#/b', ['http://Example.com/a']).getAbsoluteId(),
+            'http://example.com/a#/b',
+        );
+        assert.strictEqual(new SchemaId('/a/./b', []).getAbsoluteId(), '/a/b#');
+    });
 });
